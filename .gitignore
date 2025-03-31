@@ -1,0 +1,9 @@
+weights
+gitinore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite
+*.log       
