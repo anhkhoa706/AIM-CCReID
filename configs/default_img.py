@@ -10,7 +10,7 @@ _C = CN()
 # -----------------------------------------------------------------------------
 _C.DATA = CN()
 # Root path for dataset directory
-_C.DATA.ROOT = 'DATA_ROOT'
+_C.DATA.ROOT = '/home/wins057/Documents/Projects/ReID/CC-ReID/Image/Dataset'
 # Dataset for evaluation
 _C.DATA.DATASET = 'ltcc'
 # Workers for dataloader
@@ -71,6 +71,14 @@ _C.LOSS.CAL = 'cal'
 _C.LOSS.EPSILON = 0.1
 # Momentum for clothes-based adversarial loss with memory bank
 _C.LOSS.MOMENTUM = 0.
+# Pairwise loss
+_C.LOSS.PAIR_LOSS = 'triplet'
+# The weight for pairwise loss
+_C.LOSS.PAIR_LOSS_WEIGHT = 0.0
+# Scale for pairwise loss
+_C.LOSS.PAIR_S = 16.
+# Margin for pairwise loss
+_C.LOSS.PAIR_M = 0.3
 # -----------------------------------------------------------------------------
 # Training settings
 # -----------------------------------------------------------------------------

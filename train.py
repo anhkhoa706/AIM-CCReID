@@ -3,7 +3,7 @@ import time
 import datetime
 import logging
 import torch
-from apex import amp
+# from apex import amp
 from tools.utils import AverageMeter
 
 
@@ -35,7 +35,8 @@ def train_aim(config, epoch, model, model2, classifier, clothes_classifier, clot
     end = time.time()
     for batch_idx, (imgs, pids, camids, clothes_ids, img_path) in enumerate(trainloader):
         # Get all positive clothes classes (belonging to the same identity) for each sample
-        pos_mask = pid2clothes[pids]
+        # pos_mask = pid2clothes[pids]
+        pos_mask = pid2clothes.to(pids.device)[pids]
         imgs, pids, clothes_ids, pos_mask = imgs.cuda(), pids.cuda(), clothes_ids.cuda(), pos_mask.float().cuda()
         # Measure data loading timeq
         data_time.update(time.time() - end)
@@ -93,11 +94,11 @@ def train_aim(config, epoch, model, model2, classifier, clothes_classifier, clot
             loss2 = clothes_loss2
 
         optimizer2.zero_grad()
-        if config.TRAIN.AMP:
-            with amp.scale_loss(loss2, optimizer2) as scaled_loss2:
-                scaled_loss2.backward()
-        else:
-            loss2.backward()
+        # if config.TRAIN.AMP:
+        #     with amp.scale_loss(loss2, optimizer2) as scaled_loss2:
+        #         scaled_loss2.backward()
+        # else:
+        loss2.backward()
         optimizer2.step()
 
         GENERAL_EPOCH = config.TRAIN.START_EPOCH_ADV
@@ -116,11 +117,11 @@ def train_aim(config, epoch, model, model2, classifier, clothes_classifier, clot
             loss = cla_loss + config.LOSS.PAIR_LOSS_WEIGHT * pair_loss
         
         optimizer.zero_grad()
-        if config.TRAIN.AMP:
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
-        else:
-            loss.backward()
+        # if config.TRAIN.AMP:
+        #     with amp.scale_loss(loss, optimizer) as scaled_loss:
+        #         scaled_loss.backward()
+        # else:
+        loss.backward()
         optimizer.step()
 
         # statistics

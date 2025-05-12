@@ -1,7 +1,8 @@
 import data.img_transforms as T
 from data.dataloader import DataLoaderX
 from data.dataset_loader import ImageDataset
-from data.samplers import DistributedRandomIdentitySampler, DistributedInferenceSampler
+# from data.samplers import DistributedRandomIdentitySampler, DistributedInferenceSampler
+from data.samplers import RandomIdentitySampler
 from data.datasets.ltcc import LTCC
 from data.datasets.prcc import PRCC
 
@@ -44,16 +45,19 @@ def build_img_transforms(config):
 def build_dataloader(config):
     dataset = build_dataset(config)
     transform_train, transform_test = build_img_transforms(config)
-    train_sampler = DistributedRandomIdentitySampler(dataset.train, 
-                                                        num_instances=config.DATA.NUM_INSTANCES, 
-                                                        seed=config.SEED)
+    # train_sampler = DistributedRandomIdentitySampler(dataset.train, 
+    #                                                     num_instances=config.DATA.NUM_INSTANCES, 
+    #                                                     seed=config.SEED)
+    train_sampler = RandomIdentitySampler(dataset.train, 
+                                      num_instances=config.DATA.NUM_INSTANCES)
+
     trainloader = DataLoaderX(dataset=ImageDataset(dataset.train, transform=transform_train),
                                 sampler=train_sampler,
                                 batch_size=config.DATA.TRAIN_BATCH, num_workers=config.DATA.NUM_WORKERS,
                                 pin_memory=True, drop_last=True)
 
     galleryloader = DataLoaderX(dataset=ImageDataset(dataset.gallery, transform=transform_test),
-                                sampler=DistributedInferenceSampler(dataset.gallery),
+                                sampler=None,
                                 batch_size=config.DATA.TEST_BATCH, num_workers=config.DATA.NUM_WORKERS,
                                 pin_memory=True, drop_last=False, shuffle=False)
 
@@ -70,7 +74,7 @@ def build_dataloader(config):
         return trainloader, queryloader_same, queryloader_diff, galleryloader, dataset, train_sampler
     else:
         queryloader = DataLoaderX(dataset=ImageDataset(dataset.query, transform=transform_test),
-                                    sampler=DistributedInferenceSampler(dataset.query),
+                                    sampler=None,
                                     batch_size=config.DATA.TEST_BATCH, num_workers=config.DATA.NUM_WORKERS,
                                     pin_memory=True, drop_last=False, shuffle=False)
 

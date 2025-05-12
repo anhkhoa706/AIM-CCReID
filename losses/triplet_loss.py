@@ -2,7 +2,7 @@ import math
 import torch
 import torch.nn.functional as F
 from torch import nn
-from losses.gather import GatherLayer
+# from losses.gather import GatherLayer
 
 
 class TripletLoss(nn.Module):
@@ -30,9 +30,11 @@ class TripletLoss(nn.Module):
         # l2-normlize
         inputs = F.normalize(inputs, p=2, dim=1)
 
-        # gather all samples from different GPUs as gallery to compute pairwise loss.
-        gallery_inputs = torch.cat(GatherLayer.apply(inputs), dim=0)
-        gallery_targets = torch.cat(GatherLayer.apply(targets), dim=0)
+        # # gather all samples from different GPUs as gallery to compute pairwise loss.
+        # gallery_inputs = torch.cat(GatherLayer.apply(inputs), dim=0)
+        # gallery_targets = torch.cat(GatherLayer.apply(targets), dim=0)
+        gallery_inputs = inputs  # No need to gather across GPUs in single-GPU
+        gallery_targets = targets
 
         # compute distance
         dist = 1 - torch.matmul(inputs, gallery_inputs.t()) # values in [0, 2]

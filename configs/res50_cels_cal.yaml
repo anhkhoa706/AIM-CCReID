@@ -3,3 +3,5 @@ MODEL:
 LOSS:
   CLA_LOSS: crossentropylabelsmooth
   CAL: cal
+  PAIR_LOSS: triplet
+  PAIR_LOSS_WEIGHT: 0.0

@@ -13,8 +13,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
-from torch import distributed as dist
-from apex import amp
+# from torch import distributed as dist
+# from apex import amp
 # from models.lr_scheduler import WarmupMultiStepLR
 
 from configs.default_img import get_img_config
@@ -116,7 +116,8 @@ def main(config):
         clothes_classifier2.load_state_dict(checkpoint['clothes_classifier2_state_dict'])
         start_epoch = checkpoint['epoch']
 
-    local_rank = dist.get_rank()
+    # local_rank = dist.get_rank()
+    local_rank = 0
     model = model.cuda(local_rank)
     model2 = model2.cuda(local_rank)
     classifier = classifier.cuda(local_rank)
@@ -125,15 +126,20 @@ def main(config):
     clothes_classifier = clothes_classifier.cuda(local_rank)
     torch.cuda.set_device(local_rank)
 
-    if config.TRAIN.AMP:
-        [model, fuse, classifier], optimizer = amp.initialize([model, fuse, classifier], optimizer, opt_level="O1")
-        [model2, clothes_classifier2], optimizer2 = amp.initialize([model2, clothes_classifier2], optimizer2, opt_level="O1")
+    # if config.TRAIN.AMP:
+    #     [model, fuse, classifier], optimizer = amp.initialize([model, fuse, classifier], optimizer, opt_level="O1")
+    #     [model2, clothes_classifier2], optimizer2 = amp.initialize([model2, clothes_classifier2], optimizer2, opt_level="O1")
 
-    model = nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank)
-    fuse = nn.parallel.DistributedDataParallel(fuse, device_ids=[local_rank], output_device=local_rank)
-    model2 = nn.parallel.DistributedDataParallel(model2, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
-    classifier = nn.parallel.DistributedDataParallel(classifier, device_ids=[local_rank], output_device=local_rank)
-    clothes_classifier2 = nn.parallel.DistributedDataParallel(clothes_classifier2, device_ids=[local_rank], output_device=local_rank)
+    # model = nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank)
+    # fuse = nn.parallel.DistributedDataParallel(fuse, device_ids=[local_rank], output_device=local_rank)
+    # model2 = nn.parallel.DistributedDataParallel(model2, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
+    # classifier = nn.parallel.DistributedDataParallel(classifier, device_ids=[local_rank], output_device=local_rank)
+    # clothes_classifier2 = nn.parallel.DistributedDataParallel(clothes_classifier2, device_ids=[local_rank], output_device=local_rank)
+    model = model.cuda()
+    fuse = fuse.cuda()
+    model2 = model2.cuda()
+    classifier = classifier.cuda()
+    clothes_classifier2 = clothes_classifier2.cuda()
 
     if config.EVAL_MODE:
         logger.info("Evaluate only")
@@ -150,7 +156,9 @@ def main(config):
     best_epoch = 0
     logger.info("==> Start training")
     for epoch in range(start_epoch, config.TRAIN.MAX_EPOCH):
-        train_sampler.set_epoch(epoch)
+        # train_sampler.set_epoch(epoch)
+        if train_sampler is not None and hasattr(train_sampler, 'set_epoch'):
+            train_sampler.set_epoch(epoch)
         start_train_time = time.time()
 
         train_aim(config, epoch, model, model2, classifier, clothes_classifier, clothes_classifier2, fuse, criterion_cla, criterion_pair,
@@ -173,13 +181,21 @@ def main(config):
                 best_rank1 = rank1
                 best_epoch = epoch + 1
 
-            model_state_dict = model.module.state_dict()
-            model2_state_dict = model2.module.state_dict()
-            fuse_state_dict = fuse.module.state_dict()
-            classifier_state_dict = classifier.module.state_dict()
-            clothes_classifier_state_dict = clothes_classifier.module.state_dict()
-            clothes_classifier2_state_dict = clothes_classifier2.module.state_dict()
+            # model_state_dict = model.module.state_dict()
+            # model2_state_dict = model2.module.state_dict()
+            # fuse_state_dict = fuse.module.state_dict()
+            # classifier_state_dict = classifier.module.state_dict()
+            # clothes_classifier_state_dict = clothes_classifier.module.state_dict()
+            # clothes_classifier2_state_dict = clothes_classifier2.module.state_dict()
 
+            model_state_dict = model.state_dict()
+            model2_state_dict = model2.state_dict()
+            fuse_state_dict = fuse.state_dict()
+            classifier_state_dict = classifier.state_dict()
+            clothes_classifier_state_dict = clothes_classifier.state_dict()
+            clothes_classifier2_state_dict = clothes_classifier2.state_dict()
+
+            
             if local_rank == 0:
                 save_checkpoint({
                     'model_state_dict': model_state_dict,
@@ -210,8 +226,9 @@ if __name__ == '__main__':
     # Set GPU
     os.environ['CUDA_VISIBLE_DEVICES'] = config.GPU
     # Init dist
-    dist.init_process_group(backend="nccl", init_method='env://')
-    local_rank = dist.get_rank()
+    # dist.init_process_group(backend="nccl", init_method='env://')
+    # local_rank = dist.get_rank()
+    local_rank = 0
     # Set random seed
     set_seed(config.SEED + local_rank)
     # get logger
